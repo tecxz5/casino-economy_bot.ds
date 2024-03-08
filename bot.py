@@ -27,13 +27,13 @@ async def on_message(message):
         return
     await bot.process_commands(message)
 
-@bot.slash_command(name='balance', description='Проверь свой баланс монет', guild_ids=[1058779670583197756, 1213493135401947136])
+@bot.slash_command(name='balance', description='Проверь свой баланс монет')
 async def balance(ctx):
     user_id = ctx.author.id
     current_balance = get_balance(user_id)
     await ctx.respond(f'Твой текущий баланс: {current_balance} монет.')
 
-@bot.slash_command(name='transfer', description='Перевести деньги другому пользователю', guild_ids=[1058779670583197756, 1213493135401947136])
+@bot.slash_command(name='transfer', description='Перевести деньги другому пользователю')
 async def transfer(ctx, user_mention: Option(str, description="Укажите пользователя на которого будет произведен перевод", required=True), amount: Option(int, description="Сумма перевода", required=True, min_value=1)):
     sender_id = ctx.author.id
     # Извлекаем ID пользователя из упоминания
@@ -52,16 +52,15 @@ async def transfer(ctx, user_mention: Option(str, description="Укажите п
     await ctx.respond(f'Перевод успешен! Вы перевели {amount} монет пользователю <@{mentioned_user_id}>.')
 
 
-@bot.slash_command(name='donate', description='Закинуть деньги в благотворительный фонд',
-                   guild_ids=[1058779670583197756, 1213493135401947136])
-async def donate(ctx, amount: Option(int, description="Сумма пожертвования", required=True, min_value=1)):
+@bot.slash_command(name='donate', description='Закинуть деньги в благотворительный фонд')
+async def donate(ctx, amount: Option(int, description="Сумма a!K#Ns7.Z(:B98U", required=True, min_value=1)):
     # Сначала списываем сумму пожертвования из баланса пользователя
     deduct_donation(ctx.author.id, amount)
     # Теперь обновляем сумму пожертвования в благотворительном фонде
     update_donation_amount(ctx.author.id, amount)
     await ctx.respond(f'Вы сделали пожертвование в размере {amount}  монет. Спасибо огромное!')
 
-@bot.slash_command(name='leaders', description='Показать топ-10 пользователей', guild_ids=[1058779670583197756, 1213493135401947136])
+@bot.slash_command(name='leaders', description='Показать топ-10 пользователей')
 async def leaders(ctx):
     leaders = get_leaders()
     leaderboard = discord.Embed(title="Топ-10 пользователей", color=discord.Color.blue())
@@ -72,7 +71,7 @@ async def leaders(ctx):
         leaderboard.add_field(name=f"{rank}. {user.name}", value=f"Баланс: {balance} монет", inline=False)
     await ctx.respond(embed=leaderboard)
 
-@bot.slash_command(name='donation_leaders', description='Показать топ-10 пользователей по сумме пожертвований', guild_ids=[1213493135401947136])
+@bot.slash_command(name='donation_leaders', description='Показать топ-10 пользователей по сумме пожертвований')
 async def donation_leaders(ctx):
     leaders = get_donation_leaders()
 
@@ -83,7 +82,7 @@ async def donation_leaders(ctx):
 
     await ctx.respond(embed=leaderboard)
 
-@bot.slash_command(name='daily', description='Получить ежедневный бонус', guild_ids=[1058779670583197756, 1213493135401947136])
+@bot.slash_command(name='daily', description='Получить ежедневный бонус')
 async def daily(ctx):
     user_id = ctx.author.id
     if daily_bonus(user_id):
@@ -91,7 +90,7 @@ async def daily(ctx):
     else:
         await ctx.respond('Вы уже получали ежедневный бонус сегодня!')
 
-@bot.slash_command(name='slots', description='Кручишь слоты в казино', guild_ids=[1058779670583197756, 1213493135401947136])
+@bot.slash_command(name='slots', description='Кручишь слоты в казино')
 async def __slots(
         ctx,
         bet: Option(int, description="Сколько вы готовы поставить", required=True, min_value=1),
