@@ -1,29 +1,45 @@
 import sqlite3
 import datetime
+import logging
+
+# Настройка логгирования
+logging.basicConfig(
+    level=logging.INFO, # Уровень логирования
+    filename='bot_logs.log', # Имя файла для логов
+    filemode='a', # Режим добавления новых записей в конец файла
+    format='%(asctime)s:%(levelname)s:%(name)s: %(message)s', # Формат вывода логов
+    encoding='utf-8' # Кодировка файла
+)
 
 def create_table():
+    logging.info("Создание таблицы балансов")
     conn = sqlite3.connect('bot_balances.db')
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS balances
                  (user_id INTEGER PRIMARY KEY, balance INTEGER)''')
     conn.commit()
     conn.close()
+    logging.info("Таблица балансов создана")
 
 def create_daily_bonus_table():
+    logging.info("Создание таблицы ежедневного бонуса")
     conn = sqlite3.connect('bot_balances.db')
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS daily_bonus
                  (user_id INTEGER PRIMARY KEY, last_daily DATE)''')
     conn.commit()
     conn.close()
+    logging.info("Таблица ежедневного бонуса создана")
 
 def create_donations_table():
+    logging.info("Создание таблицы донатов")
     conn = sqlite3.connect('bot_balances.db')
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS donations
                  (user_id INTEGER PRIMARY KEY, donation_amount INTEGER)''')
     conn.commit()
     conn.close()
+    logging.info("Таблица донатов создана")
 
 def daily_bonus(user_id):
     conn = sqlite3.connect('bot_balances.db')
@@ -116,6 +132,16 @@ def get_balance(user_id):
     balance = c.fetchone()
     conn.close()
     return balance[0] if balance else 0
+
+def get_user_donation_amount(user_id):
+    conn = sqlite3.connect('bot_balances.db')
+    c = conn.cursor()
+    # Запрос на выборку суммы пожертвований пользователя
+    c.execute('SELECT donation_amount FROM donations WHERE user_id=?', (user_id,))
+    result = c.fetchone()
+    conn.close()
+    # Если пользователь уже сделал пожертвования, возвращаем сумму, иначе возвращаем 0
+    return result[0] if result else 0
 
 def get_leaders():
     conn = sqlite3.connect('bot_balances.db')
