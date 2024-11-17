@@ -1,6 +1,7 @@
 import discord
 from discord import Option
 from discord.ext import commands
+from pyexpat.errors import messages
 
 import embeds
 from casino import *
@@ -83,10 +84,11 @@ async def check(ctx, user: discord.Option(discord.SlashCommandOptionType.mention
     await ctx.respond(embed=embeds.check_stats(user_id, balance, donation, CURRENCY1, user_info.name, user_info.avatar.url, ctx.author.name, ctx.author.avatar.url), ephemeral=True)
 
 class ConfirmTransferView(discord.ui.View):
-    def __init__(self, sender_id, amount, mentioned_user_id):
+    def __init__(self, sender_id, amount, comment,  mentioned_user_id):
         super().__init__()
         self.sender_id = sender_id
         self.amount = amount
+        self.comment = comment
         self.mentioned_user_id = mentioned_user_id
 
     @discord.ui.button(label="✅", style=discord.ButtonStyle.green)
@@ -97,12 +99,12 @@ class ConfirmTransferView(discord.ui.View):
             # Здесь выполняется логика перевода
             update_balance(self.sender_id, -self.amount)
             update_balance(self.mentioned_user_id, self.amount)
-            log_message = (f"Пользователь <@{interaction.user.id}> перевел `{self.amount} {CURRENCY1}` пользователю <@{self.mentioned_user_id}>")
+            log_message = (f"Пользователь <@{interaction.user.id}> перевел `{self.amount} {CURRENCY1}` пользователю <@{self.mentioned_user_id}>. \n Комментарий к переводу: `{self.comment}`.")
             await log_to_channel("/transfer", log_message, discord.Color.green())
             logging.info(log_message)
             mentioned_user = await bot.fetch_user(self.mentioned_user_id)
-            await mentioned_user.send(embed=embeds.transfer(f'Вы получили `{self.amount} {CURRENCY1}` от пользователя <@{self.sender_id}>.', interaction.user.name, interaction.user.avatar.url, mentioned_user.name, mentioned_user.avatar.url))
-            await interaction.followup.send(embed=embeds.default("Перевод", f'Перевод успешен! Вы перевели `{self.amount} {CURRENCY1}` <@{self.mentioned_user_id}>.', interaction.user.name, interaction.user.avatar.url))
+            await mentioned_user.send(embed=embeds.transfer(f'Вы получили `{self.amount} {CURRENCY1}` от пользователя <@{self.sender_id}>. \n Комментарий к переводу: `{self.comment}`.', interaction.user.name, interaction.user.avatar.url, mentioned_user.name, mentioned_user.avatar.url))
+            await interaction.followup.send(embed=embeds.default("Перевод", f'Перевод успешен! Вы перевели `{self.amount} {CURRENCY1}` <@{self.mentioned_user_id}> с комментарием к переводу `{self.comment}`.', interaction.user.name, interaction.user.avatar.url))
             # Прерываем выполнение функции после успешного подтверждения перевода
             return
 
@@ -122,7 +124,8 @@ class ConfirmTransferView(discord.ui.View):
 @bot.slash_command(name='transfer', description=f'Перевести {CURRENCY2} другому пользователю', guild_ids=GUILD_IDS)
 async def transfer(ctx,
                    user: Option(discord.SlashCommandOptionType.mentionable, name="user", description="Укажите пользователя", required=True),
-                   amount: Option(int, description="Сумма перевода", required=True, min_value=1)):
+                   amount: Option(int, description="Сумма перевода", required=True, min_value=1),
+                   comment: Option(str, description="Комментарий к переводу", required=False)):
 
     # Проверка на роль
     if isinstance(user, discord.Role):
@@ -140,6 +143,11 @@ async def transfer(ctx,
         await ctx.respond(embed=embeds.contra("25549895998", ctx.author.name, ctx.author.avatar.url), ephemeral=True)
         return
 
+    if comment  == None:
+        comment = "Отсутствует"
+    else:
+        comment = comment
+
     sender_id = ctx.author.id
     mentioned_user_id = user.id
     sender_balance = get_balance(sender_id)
@@ -150,9 +158,9 @@ async def transfer(ctx,
         await ctx.respond(embed=embeds.default(title, f'У вас недостаточно {CURRENCY1} для перевода!', ctx.author.name, ctx.author.avatar.url), ephemeral=True)
         return
 
-    view = ConfirmTransferView(sender_id, amount, mentioned_user_id)
+    view = ConfirmTransferView(sender_id, amount, comment, mentioned_user_id)
     transfer_user = await bot.fetch_user(mentioned_user_id)
-    await ctx.author.send(embed=embeds.transfer(f"Вы собираетесь перевести `{amount} {CURRENCY1}` пользователю <@{mentioned_user_id}>. Подтвердите/Отмените перевод, нажав на кнопки ниже.", transfer_user.name, transfer_user.avatar.url, ctx.author.name, ctx.author.avatar.url), view=view)
+    await ctx.author.send(embed=embeds.transfer(f"Вы собираетесь перевести `{amount} {CURRENCY1}` пользователю <@{mentioned_user_id}> с комментарием к переводу: `{comment}`. Подтвердите/Отмените перевод, нажав на кнопки ниже.", transfer_user.name, transfer_user.avatar.url, ctx.author.name, ctx.author.avatar.url), view=view)
     await ctx.respond(embed=embeds.default(title, "Сообщение о подтверждении перевода было отправлено в ЛС", ctx.author.name, ctx.author.avatar.url), ephemeral=True)
 
 @bot.slash_command(name='charity', description=f'Закинуть {CURRENCY2} в благотворительный фонд', guild_ids=GUILD_IDS)
