@@ -3,3 +3,4 @@ __pycache__/
 .venv/
 bot_balances.db
 bot_logs.log
+config.py
